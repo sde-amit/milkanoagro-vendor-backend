@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const UploadService = require('../services/uploadService');
 const { getConnection } = require('../config/database');
+const Logger = require('../utils/logger');
 
 // @desc    Upload files
 // @route   POST /api/upload
@@ -50,15 +51,13 @@ const uploadFiles = asyncHandler(async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ File upload error:', error.message);
-
         // Clean up uploaded files if database save fails
         if (req.files) {
             for (const file of req.files) {
                 try {
                     await UploadService.deleteFile(file.key);
                 } catch (cleanupError) {
-                    console.error('❌ Cleanup error:', cleanupError.message);
+                    Logger.error('File cleanup error during upload failure', cleanupError);
                 }
             }
         }
@@ -115,7 +114,6 @@ const getUserFiles = asyncHandler(async (req, res) => {
                     fileSize: `${(file.file_size / 1024 / 1024).toFixed(2)} MB`
                 };
             } catch (error) {
-                console.error(`Error generating URL for file ${file.id}:`, error.message);
                 return {
                     ...file,
                     downloadUrl: null,
@@ -155,7 +153,6 @@ const getUserFiles = asyncHandler(async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error fetching files:', error.message);
         res.status(500);
         throw new Error('Failed to fetch files');
     }
@@ -213,7 +210,6 @@ const deleteFile = asyncHandler(async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error deleting file:', error.message);
         res.status(500);
         throw new Error('Failed to delete file: ' + error.message);
     }
@@ -264,7 +260,6 @@ const getFileDownloadUrl = asyncHandler(async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error generating download URL:', error.message);
         res.status(500);
         throw new Error('Failed to generate download URL');
     }

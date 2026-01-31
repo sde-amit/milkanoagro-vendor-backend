@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const { getConnection } = require('../config/database');
 const ValidationService = require('../services/validationService');
+const Logger = require('../utils/logger');
 
 // @desc    Register new vendor
 // @route   POST /api/vendor/register
@@ -101,24 +102,12 @@ const submitOnboardingForm = asyncHandler(async (req, res) => {
     // Check if this is a draft save (from query parameter or request body)
     const isDraft = req.query.draft === 'true' || req.body.isDraft === true || req.body.isDraft === 'true';
 
-    // Debug logging
-    console.log('🔍 Onboarding Debug:', {
-        queryDraft: req.query.draft,
-        bodyIsDraft: req.body.isDraft,
-        bodyIsDraftType: typeof req.body.isDraft,
-        isDraft: isDraft,
-        hasProducts: !!req.body.products,
-        productsLength: req.body.products?.length || 0,
-        firstProduct: req.body.products?.[0] || null
-    });
-
     // Use appropriate validation based on whether it's a draft or final submission
     const validatedData = isDraft
         ? ValidationService.validateVendorOnboarding(req.body)
         : ValidationService.validateVendorOnboardingFinal(req.body);
 
     // Convert empty strings to null for fields with database constraints
-    // Note: Database constraints expect exact formats or NULL
     if (validatedData.regPincode === '') validatedData.regPincode = null;
     if (validatedData.corrPincode === '') validatedData.corrPincode = null;
     if (validatedData.mobileNo === '') validatedData.mobileNo = null;
@@ -335,7 +324,7 @@ const getVendorProfile = asyncHandler(async (req, res) => {
                     uploadedAt: file.created_at
                 });
             } catch (error) {
-                console.error(`Error generating URL for file ${file.id}:`, error.message);
+                Logger.error(`Error generating URL for file ${file.id}`, error);
             }
         }
     }

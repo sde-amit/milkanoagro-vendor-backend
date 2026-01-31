@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { getConnection } = require('../config/database');
+const Logger = require('../utils/logger');
 
 // Socket authentication middleware
 const authenticateSocket = async (socket, next) => {
@@ -31,7 +32,6 @@ const authenticateSocket = async (socket, next) => {
 
         next();
     } catch (error) {
-        console.error('Socket authentication error:', error.message);
         next(new Error('Authentication error: Invalid token'));
     }
 };
@@ -101,7 +101,6 @@ const socketHandler = (io) => {
                 }
 
             } catch (error) {
-                console.error('❌ Vendor status update error:', error.message);
                 socket.emit('error', { message: 'Failed to update vendor status' });
             }
         });
@@ -144,7 +143,7 @@ const socketHandler = (io) => {
                 }
 
             } catch (error) {
-                console.error('❌ OTP verification tracking error:', error.message);
+                Logger.error('OTP verification tracking error', error);
             }
         });
 
@@ -207,7 +206,6 @@ const socketHandler = (io) => {
                 });
 
             } catch (error) {
-                console.error('❌ Support message error:', error.message);
                 socket.emit('error', { message: 'Failed to send message' });
             }
         });
@@ -245,7 +243,6 @@ const socketHandler = (io) => {
                 });
 
             } catch (error) {
-                console.error('❌ Admin response error:', error.message);
                 socket.emit('error', { message: 'Failed to send response' });
             }
         });
@@ -263,7 +260,7 @@ const socketHandler = (io) => {
 
         // Handle connection errors
         socket.on('error', (error) => {
-            console.error(`❌ Socket error for user ${socket.userId}:`, error.message);
+            Logger.error(`Socket error for user ${socket.userId}`, error);
         });
 
         // Send welcome message
@@ -285,7 +282,7 @@ const socketHandler = (io) => {
 
     // Handle connection errors
     io.on('connect_error', (error) => {
-        console.error('❌ Socket.IO connection error:', error.message);
+        Logger.error('Socket.IO connection error', error);
     });
 };
 

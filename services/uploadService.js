@@ -7,11 +7,6 @@ const { getConnection } = require('../config/database');
 
 // Validate required environment variables
 if (!process.env.AWS_REGION || !process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY || !process.env.S3_BUCKET_NAME) {
-    console.error("❌ Missing AWS S3 configuration:");
-    console.error("AWS_REGION:", process.env.AWS_REGION ? "✓" : "✗");
-    console.error("AWS_ACCESS_KEY_ID:", process.env.AWS_ACCESS_KEY_ID ? "✓" : "✗");
-    console.error("AWS_SECRET_ACCESS_KEY:", process.env.AWS_SECRET_ACCESS_KEY ? "✓" : "✗");
-    console.error("S3_BUCKET_NAME:", process.env.S3_BUCKET_NAME ? "✓" : "✗");
     throw new Error("Missing required AWS S3 configuration in environment variables");
 }
 
@@ -26,7 +21,6 @@ try {
         },
     });
 } catch (error) {
-    console.error("❌ Failed to initialize S3Client:", error);
     throw error;
 }
 
@@ -171,7 +165,6 @@ class UploadService {
             };
 
         } catch (error) {
-            console.error('❌ Error saving file info:', error.message);
             throw error;
         }
     }
@@ -191,7 +184,6 @@ class UploadService {
             return signedUrl;
 
         } catch (error) {
-            console.error('❌ Error generating signed URL:', error.message);
             throw new Error('Failed to generate file access URL');
         }
     }
@@ -209,7 +201,6 @@ class UploadService {
             await s3.send(command);
 
         } catch (error) {
-            console.error('❌ Error deleting file from S3:', error.message);
             throw error;
         }
     }
@@ -245,7 +236,6 @@ class UploadService {
                         downloadUrl: signedUrl
                     };
                 } catch (error) {
-                    console.error(`Error generating URL for file ${file.id}:`, error.message);
                     return {
                         ...file,
                         downloadUrl: null
@@ -256,7 +246,6 @@ class UploadService {
             return filesWithUrls;
 
         } catch (error) {
-            console.error('❌ Error fetching user files:', error.message);
             throw error;
         }
     }
@@ -288,7 +277,6 @@ class UploadService {
             );
 
         } catch (error) {
-            console.error('❌ Error deleting file record:', error.message);
             throw error;
         }
     }
@@ -330,7 +318,6 @@ class UploadService {
             return uploadedFiles;
 
         } catch (error) {
-            console.error('❌ Error in bulk file upload:', error.message);
             throw error;
         }
     }

@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
-const colors = require('colors');
 const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
 const { createServer } = require('http');
@@ -29,6 +28,9 @@ const socketHandler = require('./socket/socketHandler');
 
 // Import cleanup service
 const CleanupService = require('./services/cleanupService');
+
+// Import logger
+const Logger = require('./utils/logger');
 
 const app = express();
 const server = createServer(app);
@@ -112,7 +114,6 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// Socket.IO connection handling
 socketHandler(io);
 
 // Serve static files from React build (for production)
@@ -132,18 +133,18 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 3409;
 
 server.listen(PORT, () => {
-    console.log(`🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`.yellow.bold);
-    console.log(`📡 Socket.IO server initialized`.green.bold);
-
-    // Start periodic cleanup service
+    Logger.success(`Server running on port ${PORT}`, {
+        environment: process.env.NODE_ENV,
+        timestamp: new Date().toISOString()
+    });
     CleanupService.startPeriodicCleanup();
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-    console.log('SIGTERM received. Shutting down gracefully...');
+    Logger.info('SIGTERM received. Shutting down gracefully...');
     server.close(() => {
-        console.log('Process terminated');
+        Logger.info('Process terminated');
     });
 });
 

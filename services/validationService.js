@@ -249,26 +249,13 @@ class ValidationService {
                 data.corrPincode = data.regPincode;
             }
 
-            console.log('🔍 Draft validation - completely skipping product validation');
-
             // For draft saves, use the existing schema which already has optional products
             const validatedData = this.vendorOnboardingSchema.parse(data);
 
             return validatedData;
         } catch (error) {
-            // Debug: Log the actual error to see what's happening
-            console.log('🔍 Validation Error Debug:', {
-                hasErrors: !!error.errors,
-                isArray: Array.isArray(error.errors),
-                errorType: typeof error,
-                errorConstructor: error.constructor.name,
-                errorMessage: error.message,
-                fullError: error
-            });
-
             // Handle Zod validation errors
             if (error.errors && Array.isArray(error.errors)) {
-                console.log('🔍 Processing Zod Errors:', error.errors.length, 'errors found');
 
                 // Format validation errors into user-friendly messages
                 const errorMessages = error.errors.map(err => {
@@ -302,13 +289,10 @@ class ValidationService {
                     ? errorMessages[0]
                     : `Please fix the following errors:\n• ${errorMessages.join('\n• ')}`;
 
-                console.log('🔍 Throwing formatted error:', formattedMessage);
                 throw new Error(formattedMessage);
             } else if (error.message) {
-                console.log('🔍 Throwing original error message:', error.message);
                 throw new Error(error.message);
             } else {
-                console.log('🔍 Throwing generic validation failed error');
                 throw new Error('Validation failed');
             }
         }

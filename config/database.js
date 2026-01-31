@@ -1,5 +1,5 @@
 const mysql = require('mysql2/promise');
-const colors = require('colors');
+const Logger = require('../utils/logger');
 
 let pool = null;
 
@@ -22,7 +22,7 @@ const connectDB = async () => {
 
         // Test the connection
         const connection = await pool.getConnection();
-        console.log(`✅ MySQL Connected: ${connection.config.host}`.cyan.underline.bold);
+        Logger.success(`MySQL Connected: ${connection.config.host}`);
         connection.release();
 
         // Initialize schema manager and create tables
@@ -32,7 +32,7 @@ const connectDB = async () => {
         await schemaManager.setupDatabase();
 
     } catch (error) {
-        console.error(`❌ Database connection error: ${error.message}`.red.bold);
+        Logger.error(`Database connection error: ${error.message}`, error);
         process.exit(1);
     }
 };

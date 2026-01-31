@@ -1,10 +1,9 @@
 const { connectDB, getConnection } = require('../config/database');
+const Logger = require('../utils/logger');
 require('dotenv').config();
 
 async function fixConstraints() {
     try {
-        console.log('🔧 Fixing database constraints...');
-
         // Connect to database first
         await connectDB();
         const connection = getConnection();
@@ -22,12 +21,11 @@ async function fixConstraints() {
         for (const constraint of constraintsToRemove) {
             try {
                 await connection.execute(`ALTER TABLE otps DROP CHECK ${constraint}`);
-                console.log(`✅ Removed constraint: ${constraint}`);
             } catch (error) {
                 if (error.code === 'ER_CHECK_CONSTRAINT_NOT_FOUND') {
-                    console.log(`ℹ️  Constraint ${constraint} not found (already removed)`);
+                    Logger.info(`Constraint ${constraint} not found (already removed)`);
                 } else {
-                    console.log(`⚠️  Could not remove ${constraint}: ${error.message}`);
+                    Logger.warning(`Could not remove ${constraint}: ${error.message}`);
                 }
             }
         }
@@ -45,10 +43,8 @@ async function fixConstraints() {
             }
         }
 
-        console.log('🎉 Constraint cleanup completed!');
-
     } catch (error) {
-        console.error('❌ Error fixing constraints:', error.message);
+        Logger.error('Error fixing constraints', error);
     }
 }
 

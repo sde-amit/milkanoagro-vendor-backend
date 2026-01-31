@@ -10,10 +10,6 @@ const errorHandler = (err, req, res, next) => {
     let statusCode = res.statusCode === 200 ? 500 : res.statusCode;
     let message = err.message;
 
-    // Log error details
-    console.error(`❌ Error: ${message}`.red.bold);
-    console.error(`📍 Stack: ${err.stack}`.red);
-
     // MySQL specific errors
     if (err.code === 'ER_DUP_ENTRY') {
         statusCode = 400;

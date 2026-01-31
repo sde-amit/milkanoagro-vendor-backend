@@ -1,5 +1,6 @@
 const twilio = require('twilio');
 const { getConnection } = require('../config/database');
+const Logger = require('../utils/logger');
 
 // Initialize Twilio client with better error handling
 let twilioClient = null;
@@ -14,7 +15,6 @@ function initializeTwilioClient() {
         }
 
         twilioClient = twilio(accountSid, authToken);
-        console.log('✅ Twilio client initialized successfully'.green);
     }
 
     return twilioClient;
@@ -56,8 +56,6 @@ class OTPService {
             const cleanPhone = phone.replace(/\D/g, '');
             const formattedPhone = this.formatPhoneNumber(phone);
 
-            console.log(`📱 Attempting to send OTP to: ${cleanPhone} (formatted: ${formattedPhone})`.cyan);
-
             // Check rate limiting - max 3 OTPs per phone per 5 minutes
             const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
             const [recentOtps] = await connection.execute(
@@ -95,8 +93,6 @@ class OTPService {
                         throw new Error('Twilio phone number not configured. Please set TWILIO_PHONE_NUMBER');
                     }
 
-                    console.log(`📤 Sending SMS from ${fromNumber} to ${formattedPhone}`.yellow);
-
                     // Send SMS via Twilio
                     const result = await client.messages.create({
                         body: message,
@@ -104,16 +100,7 @@ class OTPService {
                         to: formattedPhone
                     });
 
-                    console.log(`SMS sent successfully to ${formattedPhone}`.green);
-                    console.log(`Message SID: ${result.sid}`.gray);
-                    console.log(`Status: ${result.status}`.gray);
-                    console.log(`OTP Code: ${otpCode}`.yellow);
-
                 } catch (twilioError) {
-                    console.error('Twilio SMS failed:', twilioError.message);
-                    console.error('Error Code:', twilioError.code);
-                    console.error('More Info:', twilioError.moreInfo);
-
                     // Handle specific Twilio errors
                     if (twilioError.code === 21211) {
                         throw new Error('Invalid phone number format. Please check the phone number.');
@@ -127,13 +114,12 @@ class OTPService {
                         throw new Error('Daily SMS limit exceeded. Please upgrade your Twilio account.');
                     } else {
                         // Log the OTP for development purposes as fallback
-                        console.log(`SMS FAILED - OTP for ${formattedPhone}: ${otpCode}`.yellow);
                         throw new Error(`SMS delivery failed: ${twilioError.message} (Code: ${twilioError.code || 'Unknown'})`);
                     }
                 }
             } else {
                 // Development mode - just log the OTP
-                console.log(`DEV MODE - OTP for ${formattedPhone}: ${otpCode}`.yellow);
+                Logger.debug(`DEV MODE - OTP for ${formattedPhone}: ${otpCode}`);
             }
 
             return {
@@ -146,7 +132,6 @@ class OTPService {
             };
 
         } catch (error) {
-            console.error('OTP sending failed:', error.message);
             throw error;
         }
     }
@@ -206,8 +191,6 @@ class OTPService {
                 [otpRecord.id]
             );
 
-            console.log(`✅ OTP verified for ${cleanPhone}`.green);
-
             return {
                 success: true,
                 message: 'OTP verified successfully',
@@ -215,7 +198,6 @@ class OTPService {
             };
 
         } catch (error) {
-            console.error('❌ OTP verification failed:', error.message);
             throw error;
         }
     }
@@ -238,7 +220,6 @@ class OTPService {
 
             // Verify account by fetching account details
             const account = await client.api.accounts(accountSid).fetch();
-            console.log(`✅ Twilio account verified: ${account.friendlyName} (${account.status})`.green);
 
             return {
                 success: true,
@@ -251,7 +232,6 @@ class OTPService {
             };
 
         } catch (error) {
-            console.error('❌ Twilio verification error:', error.message);
             return {
                 success: false,
                 message: `Twilio configuration error: ${error.message}`
@@ -279,9 +259,6 @@ class OTPService {
                 to: formattedPhone
             });
 
-            console.log(`✅ Test SMS sent successfully to ${formattedPhone}`.green);
-            console.log(`   Message SID: ${result.sid}`.gray);
-
             return {
                 success: true,
                 message: `Test SMS sent successfully to ${formattedPhone}`,
@@ -289,7 +266,6 @@ class OTPService {
             };
 
         } catch (error) {
-            console.error('❌ Test SMS failed:', error.message);
             return {
                 success: false,
                 message: `Test SMS failed: ${error.message}`
@@ -304,12 +280,11 @@ class OTPService {
             );
 
             if (result.affectedRows > 0) {
-                console.log(`🧹 Cleaned ${result.affectedRows} expired/used OTPs`.yellow);
+                Logger.info(`Cleaned ${result.affectedRows} expired/used OTPs`);
             }
 
             return result.affectedRows;
         } catch (error) {
-            console.error('❌ Error cleaning expired OTPs:', error.message);
             throw error;
         }
     }
@@ -341,7 +316,6 @@ class OTPService {
             return await this.sendOTP(phone, purpose);
 
         } catch (error) {
-            console.error('❌ OTP resend failed:', error.message);
             throw error;
         }
     }

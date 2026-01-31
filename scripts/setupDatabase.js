@@ -1,13 +1,11 @@
 const mysql = require('mysql2/promise');
-const colors = require('colors');
+const Logger = require('../utils/logger');
 require('dotenv').config();
 
 const setupDatabase = async () => {
     let connection;
 
     try {
-        console.log('🔄 Setting up database...'.yellow);
-
         // Connect to MySQL without specifying database
         connection = await mysql.createConnection({
             host: process.env.DB_HOST,
@@ -16,12 +14,8 @@ const setupDatabase = async () => {
             charset: 'utf8mb4'
         });
 
-        console.log(`✅ Connected to MySQL server: ${process.env.DB_HOST}`.cyan);
-
         // Create database if it doesn't exist
         await connection.execute(`CREATE DATABASE IF NOT EXISTS \`${process.env.DB_NAME}\``);
-        console.log(`✅ Database '${process.env.DB_NAME}' created/verified`.green);
-
         // Close connection and reconnect to the specific database
         await connection.end();
 
@@ -32,9 +26,6 @@ const setupDatabase = async () => {
             database: process.env.DB_NAME,
             charset: 'utf8mb4'
         });
-
-        // Create tables
-        console.log('🔄 Creating tables...'.yellow);
 
         // Users table
         await connection.execute(`
@@ -51,7 +42,6 @@ const setupDatabase = async () => {
                 INDEX idx_email (email)
             )
         `);
-        console.log('✅ Users table created'.green);
 
         // OTPs table
         await connection.execute(`
@@ -68,7 +58,6 @@ const setupDatabase = async () => {
                 INDEX idx_expires (expires_at)
             )
         `);
-        console.log('✅ OTPs table created'.green);
 
         // Vendor profiles table
         await connection.execute(`
@@ -93,7 +82,6 @@ const setupDatabase = async () => {
                 INDEX idx_status (status)
             )
         `);
-        console.log('✅ Vendor profiles table created'.green);
 
         // Vendor onboarding table
         await connection.execute(`
@@ -158,7 +146,6 @@ const setupDatabase = async () => {
                 INDEX idx_status (status)
             )
         `);
-        console.log('✅ Vendor onboarding table created'.green);
 
         // Vendor products table
         await connection.execute(`
@@ -177,7 +164,6 @@ const setupDatabase = async () => {
                 INDEX idx_vendor_onboarding (vendor_onboarding_id)
             )
         `);
-        console.log('✅ Vendor products table created'.green);
 
         // File uploads table
         await connection.execute(`
@@ -200,7 +186,6 @@ const setupDatabase = async () => {
                 INDEX idx_vendor_onboarding (vendor_onboarding_id)
             )
         `);
-        console.log('✅ File uploads table created'.green);
 
         // Activity logs table
         await connection.execute(`
@@ -219,7 +204,6 @@ const setupDatabase = async () => {
                 INDEX idx_created_at (created_at)
             )
         `);
-        console.log('✅ Activity logs table created'.green);
 
         // Create a default admin user
         const adminPhone = '9999999999';
@@ -233,17 +217,13 @@ const setupDatabase = async () => {
                 'INSERT INTO users (phone, is_verified, role) VALUES (?, TRUE, "admin")',
                 [adminPhone]
             );
-            console.log(`✅ Default admin user created with phone: ${adminPhone}`.green);
         } else {
-            console.log(`ℹ️  Admin user already exists with phone: ${adminPhone}`.blue);
+            Logger.info(`Admin user already exists with phone: ${adminPhone}`);
         }
 
-        console.log('🎉 Database setup completed successfully!'.green.bold);
-        console.log('📝 You can now start the server with: npm run dev'.cyan);
 
     } catch (error) {
-        console.error(`❌ Database setup failed: ${error.message}`.red.bold);
-        console.error(error.stack);
+        Logger.error(`Database setup failed: ${error.message}`, error);
         process.exit(1);
     } finally {
         if (connection) {
